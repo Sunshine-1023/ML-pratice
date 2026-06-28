@@ -1,0 +1,126 @@
+{
+  "data": {
+    "train_rows": 16512,
+    "test_rows": 4128,
+    "capped_train_rows_medhouseval_ge_5": 785,
+    "capped_test_rows_medhouseval_ge_5": 207
+  },
+  "versions": {
+    "v1_linear_baseline": {
+      "config": {
+        "model": "Linear(8->1)",
+        "loss": "MSELoss",
+        "optimizer": "Adam(lr=0.01)",
+        "epochs": 2000,
+        "split": "train/test only"
+      },
+      "train": {
+        "mae": 0.52864075446404,
+        "rmse": 0.7195212941906999,
+        "r2": 0.6094927426041532
+      },
+      "test": {
+        "mae": 0.5423347865581973,
+        "rmse": 0.7506473261699933,
+        "r2": 0.5840884953557879
+      }
+    },
+    "v2_linear_earlystop": {
+      "config": {
+        "model": "Linear(8->1)",
+        "loss": "MSELoss",
+        "optimizer": "Adam(lr=0.01)",
+        "early_stop": {
+          "max_epochs": 5000,
+          "patience": 80,
+          "min_delta": 1e-05
+        },
+        "split": "8:2 train/val + independent test"
+      },
+      "early_stop": {
+        "best_val_loss": 0.45382142066955566,
+        "best_epoch": 720,
+        "stopped_epoch": 800
+      },
+      "val": {
+        "mae": 0.5329666974195018,
+        "rmse": 0.7782868459306103,
+        "r2": 0.53032926520723
+      },
+      "test": {
+        "mae": 0.5482532634659792,
+        "rmse": 0.9908316466721867,
+        "r2": 0.27534917945114057
+      }
+    },
+    "v3_mlp_earlystop": {
+      "config": {
+        "model": "MLP(8->64->32->1)",
+        "loss": "SmoothL1Loss",
+        "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+        "scheduler": "ReduceLROnPlateau(factor=0.5, patience=20)",
+        "early_stop": {
+          "max_epochs": 5000,
+          "patience": 80,
+          "min_delta": 1e-05
+        },
+        "split": "8:2 train/val + independent test"
+      },
+      "early_stop": {
+        "best_val_loss": 0.09943824261426926,
+        "best_epoch": 933,
+        "stopped_epoch": 1013
+      },
+      "val": {
+        "mae": 0.3695007271800675,
+        "rmse": 0.5385106523107533,
+        "r2": 0.7751449134268367
+      },
+      "test": {
+        "mae": 0.381146392115105,
+        "rmse": 0.5585333017672772,
+        "r2": 0.7697353903149385
+      }
+    },
+    "v4_mlp_no_cap": {
+      "config": {
+        "train_filter": "MedHouseVal < 5",
+        "model": "MLP(8->64->32->1)",
+        "loss": "SmoothL1Loss",
+        "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+        "scheduler": "ReduceLROnPlateau(factor=0.5, patience=20)",
+        "early_stop": {
+          "max_epochs": 5000,
+          "patience": 80,
+          "min_delta": 1e-05
+        },
+        "split": "8:2 train/val (filtered) + full test eval"
+      },
+      "dataset": {
+        "filtered_train_rows": 15727,
+        "removed_train_rows": 785,
+        "test_rows_for_plot_no_cap": 3921
+      },
+      "early_stop": {
+        "best_val_loss": 0.10704691708087921,
+        "best_epoch": 1223,
+        "stopped_epoch": 1303
+      },
+      "val": {
+        "mae": 0.32804554495353727,
+        "rmse": 0.4690552696574165,
+        "r2": 0.7672905783255353
+      },
+      "test_full": {
+        "mae": 0.3790577136216793,
+        "rmse": 0.5709799369084483,
+        "r2": 0.759358377951916
+      },
+      "test_no_cap_only": {
+        "mae": 0.33889697994221474,
+        "rmse": 0.4924575160303333,
+        "r2": 0.7445731439092185
+      }
+    }
+  }
+}
