@@ -2,16 +2,16 @@
 模型: base_cnn
 模型配置: {'channels': [32, 64, 128], 'stage_depths': [1, 1, 1], 'kernel_size': 3, 'use_batchnorm': False, 'use_dropout': True, 'dropout_p': 0.5}
 檢查點: /Users/sunshine/Desktop/小学期实践/任务二/ml-task2-cnn/outputs/models/base_cnn_best.pth
-整體測試準確率: 39.36%
+整體測試準確率: 71.51%
 
 各類別準確率:
-  airplane    : 59.20%
-  automobile  : 42.70%
-  bird        : 39.10%
-  cat         : 1.60%
-  deer        : 25.50%
-  dog         : 62.20%
-  frog        : 39.00%
-  horse       : 40.50%
-  ship        : 36.40%
-  truck       : 47.40%
+  airplane    : 74.40%
+  automobile  : 84.20%
+  bird        : 54.90%
+  cat         : 44.00%
+  deer        : 69.60%
+  dog         : 64.40%
+  frog        : 79.10%
+  horse       : 75.00%
+  ship        : 86.00%
+  truck       : 83.50%
