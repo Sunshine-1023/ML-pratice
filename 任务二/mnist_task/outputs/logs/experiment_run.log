@@ -1,0 +1,43 @@
+Matplotlib is building the font cache; this may take a moment.
+使用裝置：mps
+開始訓練：simple_cnn
+Epoch 01/10 | train_loss=0.2218, train_acc=0.9344 | test_loss=0.0687, test_acc=0.9768
+Epoch 02/10 | train_loss=0.0598, train_acc=0.9818 | test_loss=0.0397, test_acc=0.9875
+Epoch 03/10 | train_loss=0.0423, train_acc=0.9869 | test_loss=0.0336, test_acc=0.9885
+Epoch 04/10 | train_loss=0.0326, train_acc=0.9896 | test_loss=0.0353, test_acc=0.9881
+Epoch 05/10 | train_loss=0.0251, train_acc=0.9921 | test_loss=0.0329, test_acc=0.9883
+Epoch 06/10 | train_loss=0.0201, train_acc=0.9937 | test_loss=0.0398, test_acc=0.9875
+Epoch 07/10 | train_loss=0.0164, train_acc=0.9946 | test_loss=0.0394, test_acc=0.9881
+Epoch 08/10 | train_loss=0.0114, train_acc=0.9963 | test_loss=0.0355, test_acc=0.9877
+Epoch 09/10 | train_loss=0.0105, train_acc=0.9967 | test_loss=0.0318, test_acc=0.9900
+Epoch 10/10 | train_loss=0.0104, train_acc=0.9966 | test_loss=0.0364, test_acc=0.9890
+模型已儲存：/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/models/simple_cnn.pth
+訓練紀錄已儲存：/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/logs/simple_cnn_history.csv
+使用裝置：mps
+開始訓練：better_cnn
+Epoch 01/10 | train_loss=0.2019, train_acc=0.9385 | test_loss=0.0429, test_acc=0.9850
+Epoch 02/10 | train_loss=0.0642, train_acc=0.9810 | test_loss=0.0330, test_acc=0.9888
+Epoch 03/10 | train_loss=0.0477, train_acc=0.9856 | test_loss=0.0244, test_acc=0.9917
+Epoch 04/10 | train_loss=0.0400, train_acc=0.9879 | test_loss=0.0274, test_acc=0.9910
+Epoch 05/10 | train_loss=0.0331, train_acc=0.9896 | test_loss=0.0225, test_acc=0.9927
+Epoch 06/10 | train_loss=0.0303, train_acc=0.9899 | test_loss=0.0225, test_acc=0.9921
+Epoch 07/10 | train_loss=0.0257, train_acc=0.9921 | test_loss=0.0257, test_acc=0.9921
+Epoch 08/10 | train_loss=0.0241, train_acc=0.9920 | test_loss=0.0200, test_acc=0.9932
+Epoch 09/10 | train_loss=0.0200, train_acc=0.9937 | test_loss=0.0211, test_acc=0.9940
+Epoch 10/10 | train_loss=0.0200, train_acc=0.9936 | test_loss=0.0219, test_acc=0.9934
+模型已儲存：/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/models/better_cnn.pth
+訓練紀錄已儲存：/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/logs/better_cnn_history.csv
+圖表已儲存：
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/train_loss_compare.png
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/test_loss_compare.png
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/train_accuracy_compare.png
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/test_accuracy_compare.png
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/final_test_accuracy_compare.png
+
+$ /opt/miniconda3/envs/ai/bin/python src/train.py --model simple_cnn --epochs 10 --batch-size 128 --lr 0.001 --seed 42
+
+$ /opt/miniconda3/envs/ai/bin/python src/train.py --model better_cnn --epochs 10 --batch-size 128 --lr 0.001 --seed 42
+
+$ /opt/miniconda3/envs/ai/bin/python src/plot_results.py
+
+實驗執行完成。

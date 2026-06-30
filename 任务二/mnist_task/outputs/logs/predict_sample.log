@@ -1,0 +1,55 @@
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 21407 (\N{CJK UNIFIED IDEOGRAPH-539F}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 22294 (\N{CJK UNIFIED IDEOGRAPH-5716}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 28784 (\N{CJK UNIFIED IDEOGRAPH-7070}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 38542 (\N{CJK UNIFIED IDEOGRAPH-968E}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 35009 (\N{CJK UNIFIED IDEOGRAPH-88C1}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 20999 (\N{CJK UNIFIED IDEOGRAPH-5207}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 25976 (\N{CJK UNIFIED IDEOGRAPH-6578}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 23383 (\N{CJK UNIFIED IDEOGRAPH-5B57}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 27491 (\N{CJK UNIFIED IDEOGRAPH-6B63}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 26041 (\N{CJK UNIFIED IDEOGRAPH-65B9}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 24418 (\N{CJK UNIFIED IDEOGRAPH-5F62}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 21453 (\N{CJK UNIFIED IDEOGRAPH-53CD}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:104: UserWarning: Glyph 33394 (\N{CJK UNIFIED IDEOGRAPH-8272}) missing from font(s) DejaVu Sans.
+  fig.tight_layout()
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 21407 (\N{CJK UNIFIED IDEOGRAPH-539F}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 22294 (\N{CJK UNIFIED IDEOGRAPH-5716}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 28784 (\N{CJK UNIFIED IDEOGRAPH-7070}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 38542 (\N{CJK UNIFIED IDEOGRAPH-968E}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 35009 (\N{CJK UNIFIED IDEOGRAPH-88C1}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 20999 (\N{CJK UNIFIED IDEOGRAPH-5207}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 25976 (\N{CJK UNIFIED IDEOGRAPH-6578}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 23383 (\N{CJK UNIFIED IDEOGRAPH-5B57}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 27491 (\N{CJK UNIFIED IDEOGRAPH-6B63}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 26041 (\N{CJK UNIFIED IDEOGRAPH-65B9}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 24418 (\N{CJK UNIFIED IDEOGRAPH-5F62}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 21453 (\N{CJK UNIFIED IDEOGRAPH-53CD}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/src/predict_image.py:105: UserWarning: Glyph 33394 (\N{CJK UNIFIED IDEOGRAPH-8272}) missing from font(s) DejaVu Sans.
+  fig.savefig(output_path, dpi=150)
+預測結果：7
+置信度：1.0000
+預處理流程圖已儲存：/Users/sunshine/Desktop/小学期实践/任务二/mnist_task/outputs/figures/mnist_sample_7_preprocess.png
