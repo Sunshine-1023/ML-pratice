@@ -3,7 +3,7 @@ import random
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -135,6 +135,41 @@ def build_vocab(texts: List[str], max_vocab_size: int, min_freq: int) -> Dict[st
     return stoi
 
 
+def build_pretrained_embedding_matrix(
+    glove_path: Path,
+    stoi: Dict[str, int],
+    embedding_dim: int,
+) -> torch.Tensor:
+    if not glove_path.exists():
+        raise FileNotFoundError(f"找不到預訓練詞向量檔案：{glove_path}")
+
+    # Random init for OOV words, then overwrite with matched GloVe vectors.
+    embedding_matrix = torch.empty(len(stoi), embedding_dim).uniform_(-0.05, 0.05)
+    embedding_matrix[stoi[PAD_TOKEN]] = 0.0
+
+    hit_count = 0
+    with glove_path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            parts = line.rstrip().split(" ")
+            if len(parts) <= embedding_dim:
+                continue
+            token = parts[0]
+            if token not in stoi:
+                continue
+            vector = parts[1:]
+            if len(vector) != embedding_dim:
+                continue
+            embedding_matrix[stoi[token]] = torch.tensor([float(x) for x in vector], dtype=torch.float32)
+            hit_count += 1
+
+    coverage = hit_count / max(len(stoi) - 2, 1)
+    print(
+        f"Loaded pretrained embeddings from {glove_path.name}: "
+        f"matched={hit_count}, coverage={coverage:.2%}"
+    )
+    return embedding_matrix
+
+
 class SentimentDataset(Dataset):
     def __init__(self, texts: List[str], labels: List[int], stoi: Dict[str, int], max_len: int):
         self.texts = texts
@@ -170,17 +205,42 @@ def make_collate_fn(pad_idx: int):
 
 
 class LSTMClassifier(nn.Module):
-    def __init__(self, vocab_size: int, embedding_dim: int, hidden_size: int, dropout: float):
+    def __init__(
+        self,
+        vocab_size: int,
+        embedding_dim: int,
+        hidden_size: int,
+        dropout: float,
+        num_layers: int,
+        bidirectional: bool,
+        pretrained_embeddings: Optional[torch.Tensor] = None,
+        freeze_embeddings: bool = False,
+    ):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        if pretrained_embeddings is not None:
+            if pretrained_embeddings.shape != self.embedding.weight.data.shape:
+                raise ValueError(
+                    "預訓練詞向量尺寸不符，"
+                    f"expected={tuple(self.embedding.weight.data.shape)}, "
+                    f"got={tuple(pretrained_embeddings.shape)}"
+                )
+            self.embedding.weight.data.copy_(pretrained_embeddings)
+            self.embedding.weight.requires_grad = not freeze_embeddings
+
+        lstm_dropout = dropout if num_layers > 1 else 0.0
         self.encoder = nn.LSTM(
             input_size=embedding_dim,
             hidden_size=hidden_size,
-            num_layers=1,
+            num_layers=num_layers,
             batch_first=True,
+            dropout=lstm_dropout,
+            bidirectional=bidirectional,
         )
         self.dropout = nn.Dropout(dropout)
-        self.predictor = nn.Linear(hidden_size, 2)
+        self.output_dim = hidden_size * (2 if bidirectional else 1)
+        self.attention = nn.Linear(self.output_dim, 1)
+        self.predictor = nn.Linear(self.output_dim, 2)
 
     def forward(self, input_ids: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
         embeddings = self.embedding(input_ids)
@@ -190,9 +250,26 @@ class LSTMClassifier(nn.Module):
             batch_first=True,
             enforce_sorted=False,
         )
-        _, (hidden, _) = self.encoder(packed)
-        hidden = self.dropout(hidden[-1])
-        return self.predictor(hidden)
+        packed_outputs, _ = self.encoder(packed)
+        outputs, _ = torch.nn.utils.rnn.pad_packed_sequence(
+            packed_outputs,
+            batch_first=True,
+            total_length=input_ids.size(1),
+        )
+
+        attn_scores = self.attention(outputs).squeeze(-1)
+        max_len = outputs.size(1)
+        mask = (
+            torch.arange(max_len, device=lengths.device)
+            .unsqueeze(0)
+            .expand(lengths.size(0), max_len)
+            < lengths.unsqueeze(1)
+        )
+        attn_scores = attn_scores.masked_fill(~mask, -1e9)
+        attn_weights = torch.softmax(attn_scores, dim=1).unsqueeze(-1)
+        pooled = (outputs * attn_weights).sum(dim=1)
+        pooled = self.dropout(pooled)
+        return self.predictor(pooled)
 
 
 def run_epoch(
@@ -292,10 +369,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sentiment140 LSTM (PyTorch 2.x, no torchtext)")
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=512)
-    parser.add_argument("--embedding-dim", type=int, default=200)
+    parser.add_argument("--embedding-dim", type=int, default=300)
     parser.add_argument("--hidden-size", type=int, default=128)
+    parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.0001)
+    parser.add_argument("--unidirectional", action="store_true")
+    parser.add_argument("--disable-pretrained-embeddings", action="store_true")
+    parser.add_argument("--freeze-embeddings", action="store_true")
+    parser.add_argument("--glove-path", type=str, default=str(DATA_DIR / "glove.6B.300d.txt"))
     parser.add_argument("--max-vocab-size", type=int, default=20000)
     parser.add_argument("--min-freq", type=int, default=2)
     parser.add_argument("--max-len", type=int, default=50)
@@ -303,6 +385,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--val-size", type=float, default=0.1)
     parser.add_argument("--test-size", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--early-stop-patience",
+        type=int,
+        default=0,
+        help="早停容忍輪數；<=0 表示關閉早停。",
+    )
+    parser.add_argument(
+        "--early-stop-min-delta",
+        type=float,
+        default=0.0,
+        help="驗證 loss 需至少改善的最小幅度，才視為有效提升。",
+    )
     return parser.parse_args()
 
 
@@ -344,6 +438,15 @@ def main() -> None:
     print(f"Train / Val / Test = {len(train_texts)} / {len(val_texts)} / {len(test_texts)}")
 
     stoi = build_vocab(train_texts, args.max_vocab_size, args.min_freq)
+    use_pretrained_embeddings = not args.disable_pretrained_embeddings
+    pretrained_embeddings = None
+    if use_pretrained_embeddings:
+        pretrained_embeddings = build_pretrained_embedding_matrix(
+            glove_path=Path(args.glove_path),
+            stoi=stoi,
+            embedding_dim=args.embedding_dim,
+        )
+
     train_ds = SentimentDataset(train_texts, train_labels, stoi, args.max_len)
     val_ds = SentimentDataset(val_texts, val_labels, stoi, args.max_len)
     test_ds = SentimentDataset(test_texts, test_labels, stoi, args.max_len)
@@ -373,6 +476,10 @@ def main() -> None:
         embedding_dim=args.embedding_dim,
         hidden_size=args.hidden_size,
         dropout=args.dropout,
+        num_layers=args.num_layers,
+        bidirectional=not args.unidirectional,
+        pretrained_embeddings=pretrained_embeddings,
+        freeze_embeddings=args.freeze_embeddings,
     ).to(device)
 
     criterion = nn.CrossEntropyLoss()
@@ -389,6 +496,7 @@ def main() -> None:
 
     best_val_loss = float("inf")
     best_model_path = MODEL_DIR / "best_lstm.pt"
+    epochs_without_improvement = 0
 
     for epoch in range(1, args.epochs + 1):
         train_loss, train_acc = run_epoch(
@@ -439,9 +547,21 @@ def main() -> None:
             f"test_loss={test_loss:.4f}, test_acc={test_acc:.4f}"
         )
 
-        if val_loss < best_val_loss:
+        if val_loss < (best_val_loss - args.early_stop_min_delta):
             best_val_loss = val_loss
             torch.save(model.state_dict(), best_model_path)
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
+
+        if args.early_stop_patience > 0 and epochs_without_improvement >= args.early_stop_patience:
+            print(
+                f"Early stopping triggered at epoch {epoch:02d} | "
+                f"best_val_loss={best_val_loss:.4f}, "
+                f"patience={args.early_stop_patience}, "
+                f"min_delta={args.early_stop_min_delta}"
+            )
+            break
 
     save_curves(history)
     print(f"Best model saved to: {best_model_path}")
