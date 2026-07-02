@@ -291,11 +291,11 @@ def save_curves(history: Dict[str, List[float]]) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sentiment140 LSTM (PyTorch 2.x, no torchtext)")
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=256)
+    parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--embedding-dim", type=int, default=200)
     parser.add_argument("--hidden-size", type=int, default=128)
     parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--max-vocab-size", type=int, default=20000)
     parser.add_argument("--min-freq", type=int, default=2)
     parser.add_argument("--max-len", type=int, default=50)
