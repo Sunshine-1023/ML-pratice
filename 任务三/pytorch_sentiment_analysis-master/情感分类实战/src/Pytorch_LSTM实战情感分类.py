@@ -12,6 +12,7 @@ import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 from torch.utils.data import DataLoader, Dataset
+from tqdm import tqdm
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -201,6 +202,9 @@ def run_epoch(
     optimizer: torch.optim.Optimizer,
     device: torch.device,
     train_mode: bool,
+    epoch_idx: int,
+    total_epochs: int,
+    stage: str,
 ) -> Tuple[float, float]:
     if train_mode:
         model.train()
@@ -211,7 +215,13 @@ def run_epoch(
     total_correct = 0
     total_samples = 0
 
-    for input_ids, lengths, labels in dataloader:
+    progress = tqdm(
+        dataloader,
+        desc=f"Epoch {epoch_idx:02d}/{total_epochs:02d} [{stage}]",
+        leave=False,
+        dynamic_ncols=True,
+    )
+    for input_ids, lengths, labels in progress:
         input_ids = input_ids.to(device)
         lengths = lengths.to(device)
         labels = labels.to(device)
@@ -228,6 +238,10 @@ def run_epoch(
         total_loss += loss.item() * batch_size
         total_correct += (logits.argmax(dim=1) == labels).sum().item()
         total_samples += batch_size
+        progress.set_postfix(
+            loss=f"{total_loss / max(total_samples, 1):.4f}",
+            acc=f"{total_correct / max(total_samples, 1):.4f}",
+        )
 
     avg_loss = total_loss / max(total_samples, 1)
     accuracy = total_correct / max(total_samples, 1)
@@ -378,13 +392,37 @@ def main() -> None:
 
     for epoch in range(1, args.epochs + 1):
         train_loss, train_acc = run_epoch(
-            model, train_loader, criterion, optimizer, device, train_mode=True
+            model,
+            train_loader,
+            criterion,
+            optimizer,
+            device,
+            train_mode=True,
+            epoch_idx=epoch,
+            total_epochs=args.epochs,
+            stage="train",
         )
         val_loss, val_acc = run_epoch(
-            model, val_loader, criterion, optimizer, device, train_mode=False
+            model,
+            val_loader,
+            criterion,
+            optimizer,
+            device,
+            train_mode=False,
+            epoch_idx=epoch,
+            total_epochs=args.epochs,
+            stage="val",
         )
         test_loss, test_acc = run_epoch(
-            model, test_loader, criterion, optimizer, device, train_mode=False
+            model,
+            test_loader,
+            criterion,
+            optimizer,
+            device,
+            train_mode=False,
+            epoch_idx=epoch,
+            total_epochs=args.epochs,
+            stage="test",
         )
 
         history["train_loss"].append(train_loss)
