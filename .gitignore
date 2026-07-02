@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# IDE / 快取
+.vscode/
+**/.matplotlib/
+
+# 大型資料集（情感分析）
+**/data/glove*.txt
+**/data/train-processed.csv
+**/data/training.*.csv
+**/data/test_sample.csv
+
+# Word 文件
+*.docx
+
+# 壓縮資料集
+*.gz
+*.zip
