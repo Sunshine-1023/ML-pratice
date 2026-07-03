@@ -1,0 +1,5 @@
+category,text,true_label,pred_label,prob_negative,prob_positive,confidence
+"Correct Positive (true=1, pred=1)",My ex still my ex &quot;&quot; http://bit.ly/GJqpH  asi hace Nick &quot;&quot; heee!,1,1,0.37743496894836426,0.6225650310516357,0.6225650310516357
+"Correct Negative (true=0, pred=0)","I'm going through my photobucket account, and I really miss psychic Sam in SUPERNATURAL.",0,0,0.8289096355438232,0.17109031975269318,0.8289096355438232
+"False Positive (true=0, pred=1)",@Dcorreal yeah its wicked phattt :-P i got church at 11  good night/morning,0,1,0.07450699061155319,0.9254929423332214,0.9254929423332214
+"False Negative (true=1, pred=0)",@What_Emz_Sez About to leave to catch my flight  I get in at 8 and am texting you when I land! xox,1,0,0.558194100856781,0.441805899143219,0.558194100856781

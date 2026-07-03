@@ -1,0 +1,4 @@
+version,best_test_acc,best_test_acc_epoch,best_val_loss,best_val_loss_epoch,final_test_acc,final_val_acc
+V3_full_b512_e300_es2,0.83296875,8,0.3772320417881012,10,0.83219375,0.83090625
+V2_full_b256_e200,0.82545,8,0.389534220123291,5,0.82405625,0.822625
+V1_200k_b512_e300,0.7977,8,0.4281680710792541,6,0.79485,0.8038

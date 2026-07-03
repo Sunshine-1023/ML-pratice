@@ -43,7 +43,7 @@ pip install -r 情感分类实战/requirement.txt
 
 ```bash
 cd 情感分类实战
-python src/Pytorch_LSTM实战情感分类.py --epochs 5 --max-samples 200000
+python "src 2/Pytorch_LSTM实战情感分类.py" --epochs 5 --max-samples 200000
 ```
 
 脚本启动后会打印：
