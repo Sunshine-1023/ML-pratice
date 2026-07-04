@@ -211,6 +211,7 @@ class LSTMClassifier(nn.Module):
         embedding_dim: int,
         hidden_size: int,
         dropout: float,
+        embedding_dropout: float,
         num_layers: int,
         bidirectional: bool,
         pretrained_embeddings: Optional[torch.Tensor] = None,
@@ -228,6 +229,7 @@ class LSTMClassifier(nn.Module):
             self.embedding.weight.data.copy_(pretrained_embeddings)
             self.embedding.weight.requires_grad = not freeze_embeddings
 
+        self.embedding_dropout = nn.Dropout(embedding_dropout)
         lstm_dropout = dropout if num_layers > 1 else 0.0
         self.encoder = nn.LSTM(
             input_size=embedding_dim,
@@ -244,6 +246,7 @@ class LSTMClassifier(nn.Module):
 
     def forward(self, input_ids: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
         embeddings = self.embedding(input_ids)
+        embeddings = self.embedding_dropout(embeddings)
         packed = pack_padded_sequence(
             embeddings,
             lengths.cpu(),
@@ -282,6 +285,7 @@ def run_epoch(
     epoch_idx: int,
     total_epochs: int,
     stage: str,
+    max_grad_norm: float = 0.0,
 ) -> Tuple[float, float]:
     if train_mode:
         model.train()
@@ -309,6 +313,8 @@ def run_epoch(
             if train_mode:
                 optimizer.zero_grad()
                 loss.backward()
+                if max_grad_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
                 optimizer.step()
 
         batch_size = labels.size(0)
@@ -373,7 +379,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hidden-size", type=int, default=128)
     parser.add_argument("--num-layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--embedding-dropout", type=float, default=0.1)
     parser.add_argument("--lr", type=float, default=0.0001)
+    parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--label-smoothing", type=float, default=0.05)
+    parser.add_argument("--max-grad-norm", type=float, default=1.0)
     parser.add_argument("--unidirectional", action="store_true")
     parser.add_argument("--disable-pretrained-embeddings", action="store_true")
     parser.add_argument("--freeze-embeddings", action="store_true")
@@ -476,14 +486,15 @@ def main() -> None:
         embedding_dim=args.embedding_dim,
         hidden_size=args.hidden_size,
         dropout=args.dropout,
+        embedding_dropout=args.embedding_dropout,
         num_layers=args.num_layers,
         bidirectional=not args.unidirectional,
         pretrained_embeddings=pretrained_embeddings,
         freeze_embeddings=args.freeze_embeddings,
     ).to(device)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     history = {
         "train_loss": [],
@@ -509,6 +520,7 @@ def main() -> None:
             epoch_idx=epoch,
             total_epochs=args.epochs,
             stage="train",
+            max_grad_norm=args.max_grad_norm,
         )
         val_loss, val_acc = run_epoch(
             model,
