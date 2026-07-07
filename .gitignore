@@ -5,15 +5,46 @@
 .vscode/
 **/.matplotlib/
 
-# 大型資料集（情感分析）
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.env
+.venv/
+env/
+venv/
+pip-wheel-metadata/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs, outputs, figures, and models
+**/output/
+**/outputs/
+**/logs/
+**/figures/
+**/models/
+**/*.pth
+**/*.pt
+**/*.h5
+
+# Caches
+**/.pytest_cache/
+**/.mypy_cache/
+
+# Large dataset files (情感分析)
 **/data/glove*.txt
 **/data/train-processed.csv
 **/data/training.*.csv
 **/data/test_sample.csv
 
-# Word 文件
+# Word documents
 *.docx
 
-# 壓縮資料集
+# Compressed archives
 *.gz
 *.zip

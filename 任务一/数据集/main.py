@@ -11,17 +11,27 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
+# 這份腳本用途：
+# 1) 用多特徵 MLP 做房價回歸
+# 2) 產出訓練/驗證/測試評估指標
+# 3) 輸出多種圖表與實驗對比結果
 
 # =========================
 # 1. 基本配置
 # =========================
 
-TRAIN_PATH = "数据集/train_data.csv"
-TEST_PATH = "数据集/test_data.csv"
-OUTPUT_DIR = "output"
+# 以目前檔案位置作為路徑基準，避免從不同工作目錄執行時找不到資料
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TASK_DIR = os.path.dirname(BASE_DIR)
 
+TRAIN_PATH = os.path.join(BASE_DIR, "train_data.csv")
+TEST_PATH = os.path.join(BASE_DIR, "test_data.csv")
+OUTPUT_DIR = os.path.join(TASK_DIR, "output")
+
+# 建立輸出資料夾；若已存在則不報錯
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Apple Silicon 優先使用 MPS，否則退回 CPU
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print("当前使用设备:", device)
 
@@ -30,6 +40,7 @@ print("当前使用设备:", device)
 # 2. 读取数据
 # =========================
 
+# 讀取訓練集與測試集 CSV
 train_df = pd.read_csv(TRAIN_PATH)
 test_df = pd.read_csv(TEST_PATH)
 
@@ -44,8 +55,10 @@ print(test_df.head())
 # 3. 选择特征和目标变量
 # =========================
 
+# 目標欄位：房價中位數
 target_col = "MedHouseVal"
 
+# 使用的輸入特徵欄位
 feature_cols = [
     "MedInc",
     "HouseAge",
@@ -68,6 +81,7 @@ X_train, X_val, y_train, y_val = train_test_split(
 X_test = test_df[feature_cols].values
 y_test = test_df[[target_col]].values
 
+# 印出資料切分規模，方便核對流程是否正確
 print(f"\n训练子集样本数: {len(X_train)}")
 print(f"验证子集样本数: {len(X_val)}")
 print(f"测试集样本数: {len(X_test)}")
@@ -79,6 +93,7 @@ print(f"测试集样本数: {len(X_test)}")
 # 注意：只能用训练集 fit scaler，测试集只能 transform
 # 这样可以避免测试集信息泄露
 
+# x/y 各自使用一個 scaler，避免尺度混在一起
 x_scaler = StandardScaler()
 y_scaler = StandardScaler()
 
@@ -95,6 +110,7 @@ y_test_scaled = y_scaler.transform(y_test)
 # 5. 转换为 PyTorch Tensor
 # =========================
 
+# 轉成 float32 並搬到運算裝置
 X_train_tensor = torch.tensor(X_train_scaled, dtype=torch.float32).to(device)
 y_train_tensor = torch.tensor(y_train_scaled, dtype=torch.float32).to(device)
 
@@ -109,9 +125,11 @@ y_test_tensor = torch.tensor(y_test_scaled, dtype=torch.float32).to(device)
 # 6. 构建线性回归模型
 # =========================
 
+# 雖然段落標題寫線性回歸，實際是含非線性的 MLP 回歸模型
 class RegressionMLP(nn.Module):
     def __init__(self, input_dim):
         super().__init__()
+        # 兩層隱藏層 + Dropout，最後輸出單一連續值
         self.net = nn.Sequential(
             nn.Linear(input_dim, 64),
             nn.ReLU(),
@@ -129,6 +147,7 @@ class RegressionMLP(nn.Module):
 input_dim = len(feature_cols)
 model = RegressionMLP(input_dim).to(device)
 
+# 顯示網路拓樸
 print("\n模型结构:")
 print(model)
 
@@ -137,8 +156,11 @@ print(model)
 # 7. 定义损失函数和优化器
 # =========================
 
+# SmoothL1 對離群值比 MSE 更穩健
 criterion = nn.SmoothL1Loss()
+# AdamW + weight decay 作為正則化
 optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+# 驗證集 loss 停滯時自動降學習率
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode="min", factor=0.5, patience=20
 )
@@ -148,6 +170,7 @@ scheduler = optim.lr_scheduler.ReduceLROnPlateau(
 # 8. 训练模型（Early Stopping）
 # =========================
 
+# 最長訓練輪數；若驗證集長時間無改善則提前停止
 max_epochs = 5000
 patience = 80
 min_delta = 1e-5
@@ -161,6 +184,7 @@ best_epoch = 0
 wait = 0
 
 for epoch in range(max_epochs):
+    # --- 訓練階段 ---
     model.train()
 
     # 前向传播
@@ -178,6 +202,7 @@ for epoch in range(max_epochs):
     # 更新参数
     optimizer.step()
 
+    # --- 驗證階段 ---
     model.eval()
     with torch.no_grad():
         y_val_pred = model(X_val_tensor)
@@ -188,8 +213,10 @@ for epoch in range(max_epochs):
 
     train_loss_history.append(train_loss_value)
     val_loss_history.append(val_loss_value)
+    # 以驗證損失驅動學習率調整
     scheduler.step(val_loss_value)
 
+    # 只有顯著變好才更新最佳權重，避免抖動造成頻繁覆蓋
     if val_loss_value < best_val_loss - min_delta:
         best_val_loss = val_loss_value
         best_state_dict = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -208,6 +235,7 @@ for epoch in range(max_epochs):
         print(f"\nEarly stopping 在第 {epoch + 1} 轮触发")
         break
 
+# 回載整個訓練過程中驗證集最好的模型權重
 if best_state_dict is not None:
     model.load_state_dict(best_state_dict)
 
@@ -218,6 +246,7 @@ print(f"最佳验证损失: {best_val_loss:.6f} (第 {best_epoch} 轮)")
 # 9. 测试模型
 # =========================
 
+# 推論時關閉訓練行為
 model.eval()
 
 with torch.no_grad():
@@ -245,6 +274,7 @@ y_test_true = y_test
 # 10. 计算评价指标
 # =========================
 
+# 在驗證集與測試集分別計算 MAE / RMSE / R2
 mae = mean_absolute_error(y_test_true, y_test_pred)
 rmse = np.sqrt(mean_squared_error(y_test_true, y_test_pred))
 r2 = r2_score(y_test_true, y_test_pred)
@@ -268,6 +298,7 @@ print(f"R2   决定系数: {r2:.4f}")
 # 11. 保存预测结果
 # =========================
 
+# 匯出測試集逐筆預測與誤差，便於後續人工檢查
 result_df = test_df.copy()
 result_df["Predicted_MedHouseVal"] = y_test_pred
 result_df["Absolute_Error"] = np.abs(result_df[target_col] - result_df["Predicted_MedHouseVal"])
@@ -282,6 +313,7 @@ print(f"\n预测结果已保存到: {result_path}")
 # 12. 绘制训练集与验证集 Loss 曲线（分开）
 # =========================
 
+# 分開保存 train/val 曲線，便於看清各自趨勢
 plt.figure(figsize=(8, 5))
 plt.plot(train_loss_history, color="#1f77b4")
 plt.xlabel("Epoch")
@@ -308,6 +340,7 @@ print(f"训练集 Loss 曲线已保存到: {train_loss_fig_path}")
 print(f"验证集 Loss 曲线已保存到: {val_loss_fig_path}")
 
 # 兼容旧文件名：同时保存一张合并 Loss 曲线
+# 同時保留舊版需要的合併圖輸出
 plt.figure(figsize=(8, 5))
 plt.plot(train_loss_history, label="Train Loss")
 plt.plot(val_loss_history, label="Val Loss")
@@ -328,9 +361,11 @@ print(f"兼容版 Loss 曲线已保存到: {legacy_loss_fig_path}")
 # =========================
 
 def save_centered_true_pred_plot(y_true, y_pred, title, save_path):
+    # 轉成一維向量，確保 scatter/percentile 計算一致
     y_true = np.asarray(y_true).reshape(-1)
     y_pred = np.asarray(y_pred).reshape(-1)
 
+    # 以主分布分位數決定軸範圍，降低極端值影響
     low = min(np.percentile(y_true, 1), np.percentile(y_pred, 1))
     high = max(np.percentile(y_true, 99), np.percentile(y_pred, 99))
     pad = (high - low) * 0.08
@@ -387,6 +422,7 @@ def save_test_style_plot(y_true, y_pred, save_path):
 
 
 pred_fig_path = os.path.join(OUTPUT_DIR, "true_vs_predicted.png")
+# 主測試集預測對比圖
 save_test_style_plot(y_test_true, y_test_pred, pred_fig_path)
 print(f"预测对比图已保存到: {pred_fig_path}")
 
@@ -399,6 +435,7 @@ save_test_style_plot(y_test_true, y_test_pred, test_pred_fig_path)
 print(f"测试集对比图已保存到: {test_pred_fig_path}")
 
 # 重绘 MedInc -> MedHouseVal 线性拟合图
+# 補一張單特徵線性擬合示意圖，提升報告可解釋性
 x_medinc = train_df["MedInc"].values.reshape(-1, 1)
 y_house = train_df[target_col].values
 w, b = np.polyfit(x_medinc.flatten(), y_house, 1)
@@ -426,6 +463,7 @@ print(f"MedInc线性拟合图已保存到: {medinc_fig_path}")
 # 14. 优化方案二：去掉封顶样本对比实验
 # =========================
 
+# 封頂樣本（MedHouseVal=5）可能造成模型擬合偏移，因此做去封頂對比
 print("\n=========================")
 print("对比实验 B：去掉 MedHouseVal >= 5 的封顶样本")
 print("=========================")
@@ -437,6 +475,7 @@ print(f"去掉封顶样本后: {len(train_df_no_cap)}")
 X_all_b = train_df_no_cap[feature_cols].values
 y_all_b = train_df_no_cap[[target_col]].values
 
+# 實驗 B：重新切分、標準化、訓練與評估
 X_train_b, X_val_b, y_train_b, y_val_b = train_test_split(
     X_all_b, y_all_b, test_size=0.2, random_state=42
 )
@@ -472,6 +511,7 @@ best_epoch_b = 0
 wait_b = 0
 
 for epoch in range(max_epochs):
+    # 與實驗 A 相同訓練流程，僅資料不同
     model_b.train()
     y_train_b_pred = model_b(X_train_b_tensor)
     train_loss_b = criterion_b(y_train_b_pred, y_train_b_tensor)
@@ -507,6 +547,7 @@ for epoch in range(max_epochs):
 if best_state_dict_b is not None:
     model_b.load_state_dict(best_state_dict_b)
 
+# 反標準化後計算 B 的驗證/測試指標
 with torch.no_grad():
     y_val_b_pred_scaled = model_b(X_val_b_tensor).cpu().numpy()
     y_test_b_pred_scaled = model_b(X_test_b_tensor).cpu().numpy()
@@ -537,6 +578,7 @@ save_test_style_plot(
 )
 print(f"实验 B 测试集对比图已保存到: {test_pred_fig_path_b}")
 
+# 匯總 A/B 兩個實驗的核心指標到同一張表
 comparison_df = pd.DataFrame(
     [
         {
@@ -568,6 +610,7 @@ print(f"对比结果已保存到: {comparison_path}")
 # 15. 保存模型
 # =========================
 
+# 同步保存實驗 A 與實驗 B 的模型權重
 model_path = os.path.join(OUTPUT_DIR, "mlp_regression_model.pth")
 torch.save(model.state_dict(), model_path)
 model_b_path = os.path.join(OUTPUT_DIR, "mlp_regression_model_no_cap.pth")
@@ -581,5 +624,6 @@ print(f"实验 B 模型参数已保存到: {model_b_path}")
 # 16. 输出部分预测样例
 # =========================
 
+# 顯示前 10 筆測試樣本的真值/預測/誤差
 print("\n前10个测试样本预测结果:")
 print(result_df[[target_col, "Predicted_MedHouseVal", "Absolute_Error"]].head(10))
